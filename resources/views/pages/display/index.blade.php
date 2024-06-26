@@ -32,14 +32,15 @@
                         </div>
                         <div class="col-span-2 row-span-2 flex flex-col rounded-lg bg-black/30">
                             <div class="w-full p-2">
-                                <span class="text-xl font-medium text-white">Riwayat Antrian</span>
+                                <span class="p-3 text-xl font-medium text-white">Riwayat Antrian</span>
                             </div>
                             <div class="flex h-full flex-col justify-around gap-5 px-5 py-3" id="riwayat_antrian">
                                 @for ($j = 1; $j <= 5; $j++)
-                                    <div class="flex h-full w-full items-center justify-around bg-white/5 text-white">
-                                        <span class="text-7xl font-medium" id="no_antrian_{{ $j }}"></span>
-                                        <span class="text-7xl font-medium" id="no_antrian_rm_{{ $j }}"></span>
-                                        <span class="text-6xl font-medium" id="no_poli_{{ $j }}"></span>
+                                    <div class="flex h-full w-full items-center bg-white/5 text-white">
+                                        <span class="w-full text-center text-7xl font-medium"
+                                            id="no_antrian_{{ $j }}"></span>
+                                        <span class="w-full text-center text-6xl font-medium"
+                                            id="no_tujuan_{{ $j }}"></span>
                                     </div>
                                 @endfor
                             </div>
@@ -196,6 +197,9 @@
                 noAntrianDisplay.innerHTML = `
                     <span id='no_antrian_rm_latest' class="text-9xl font-bold text-yellow-300">${latestData.no_antrian_rm}</span>
                 `;
+                tujuanDisplay.innerHTML = `
+                    <span id='no_loket_latest' class="text-8xl font-medium">${latestData.no_loket}</span>
+                `;
             } else {
                 noAntrianDisplay.innerHTML = `
                     <span class="text-xl font-medium">Tidak ada status</span>
@@ -207,13 +211,19 @@
                 item.id = index + 1; // Menambahkan properti id ke setiap elemen data
 
                 const noAntrianSpan = document.getElementById(`no_antrian_${item.id}`);
-                const noAntrianRMSpan = document.getElementById(`no_antrian_rm_${item.id}`);
-                const noPoliSpan = document.getElementById(`no_poli_${item.id}`);
+                // const noAntrianRMSpan = document.getElementById(`no_antrian_rm_${item.id}`);
+                const noTujuanSpan = document.getElementById(`no_tujuan_${item.id}`);
 
-                if (noAntrianSpan && noAntrianRMSpan && noPoliSpan) {
-                    noAntrianSpan.textContent = item.no_antrian;
-                    noAntrianRMSpan.textContent = item.no_antrian_rm;
-                    noPoliSpan.textContent = item.no_poli;
+                if (noAntrianSpan && noTujuanSpan) {
+                    if (item.status === 'poli') {
+                        noAntrianSpan.textContent = item.no_antrian;
+                        noTujuanSpan.textContent = item.no_poli;
+                    } else if (item.status === 'rekam medis') {
+                        noAntrianSpan.textContent = item.no_antrian_rm;
+                        noTujuanSpan.textContent = item.no_loket;
+                    }
+                } else {
+                    console.warn(`Element with ID no_antrian_${item.id} or no_tujuan_${item.id} not found`);
                 }
             });
         }
@@ -286,6 +296,7 @@
         function splitTextRM() {
             var text_no_antrian = document.getElementById('text_no_antrian').textContent;
             var no_antrian_rm_now = document.getElementById('no_antrian_rm_latest').textContent;
+            var no_loket_now = document.getElementById('no_loket_latest').textContent;
 
             // Memisahkan no_antrian_rm_now dengan spasi menjadi elemen yang terpisah
             var no_antrian_rm_elements = no_antrian_rm_now.split(' ');
@@ -328,8 +339,14 @@
                 }
             }
 
+            // Memisahkan no_poli_now dengan spasi menjadi elemen yang terpisah
+            var no_loket_now_elements = no_loket_now.split(' ');
+            if (no_loket_now_elements.length === 2) {
+                no_loket_now_elements = [`ke ${no_loket_now_elements[0]}`, no_loket_now_elements[1]];
+            }
+
             // Menggabungkan semua elemen ke dalam array textToSpeech
-            var textToSpeech = [text_no_antrian, ...parsedElements, warna_antrian];
+            var textToSpeech = [text_no_antrian, ...parsedElements, warna_antrian, ...no_loket_now_elements];
 
             return textToSpeech;
         }
