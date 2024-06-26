@@ -46,8 +46,9 @@
                 </div>
             </div>
         </div>
+        <span id="count_riwayat" hidden></span>
         <div class="w-full overflow-hidden bg-black/30 py-1">
-            <div class="animate-marquee flex space-x-8 whitespace-nowrap">
+            <div class="flex animate-marquee space-x-8 whitespace-nowrap">
                 @foreach ($messages as $message)
                     <span class="text-xl font-medium text-white">{{ $message }}</span>
                 @endforeach
@@ -104,6 +105,7 @@
 
         var base_url = '{{ $baseUrl }}';
         var urlAPI = base_url + '/api/antrian/tv';
+        let previousTimestamp = 0;
 
         // window.addEventListener('load', function() {
         //     // Fetch untuk menghapus data pada API saat halaman dimuat ulang
@@ -136,6 +138,8 @@
 
                 updateNoAntrianDisplay(data)
 
+                detectTimestamp(data)
+
             } catch (error) {
                 console.error(error);
             }
@@ -150,105 +154,118 @@
         // Panggil startPolling() untuk memulai polling
         startPolling();
 
-        function updateNoAntrianDisplay(data) {
-            const latestData = data[0];
-            const firstFiveData = data.slice(0, 5);
-            firstFiveData.forEach((item, index) => {
-                item.id = index + 1; // Menambahkan properti id ke setiap elemen data
+        // Fungsi untuk mengupdate jumlah data yang telah masuk
+        // function updateDataCount() {
+        //     const countElement = document.getElementById('count_riwayat');
+        //     console.log(countElement);
+        //     let dataCount = parseInt(countElement.textContent) || 0;
+        //     dataCount++;
+        //     countElement.textContent = dataCount;
+        // }
 
-                // Dapatkan elemen div
-                const riwayat_antrian = document.getElementById('riwayat_antrian');
-                const noAntrianDisplay = document.getElementById('no_antrian_display');
-
-                if (latestData.status === "poli") {
-                    const noAntrianSpan = document.getElementById(`no_antrian_${item.id}`);
-                    const noAntrianRMSpan = document.getElementById(`no_antrian_rm_${item.id}`);
-                    const noPoliSpan = document.getElementById(`no_poli_${item.id}`);
-
-
-                    if (noAntrianSpan && noAntrianRMSpan && noPoliSpan) {
-                        noAntrianSpan.textContent = item.no_antrian;
-                        noAntrianRMSpan.textContent = item.no_antrian_rm;
-                        noPoliSpan.textContent = item.no_poli;
-                    }
-
-                    noAntrianDisplay.innerHTML = `
-                <span id='no_antrian_latest' class="text-9xl font-bold text-yellow-300">${latestData.no_antrian}</span>
-                <span id='no_poli_latest' class="text-3xl font-medium">${latestData.no_poli}</span>
-                `;
-
-                } else if (latestData.status === "rekam medis") {
-                    const noAntrianSpan = document.getElementById(`no_antrian_${item.id}`);
-                    const noAntrianRMSpan = document.getElementById(`no_antrian_rm_${item.id}`);
-                    const noPoliSpan = document.getElementById(`no_poli_${item.id}`);
-
-
-                    if (noAntrianSpan && noAntrianRMSpan && noPoliSpan) {
-                        noAntrianSpan.textContent = item.no_antrian;
-                        noAntrianRMSpan.textContent = item.no_antrian_rm;
-                        noPoliSpan.textContent = item.no_poli;
-                    }
-                    noAntrianDisplay.innerHTML = `
-                <span id='no_antrian_rm_latest' class="text-9xl font-bold text-yellow-300">${latestData.no_antrian_rm}</span>
-                `;
-                } else {
-                    noAntrianDisplay.innerHTML = `
-                <span class="text-xl font-medium">Tidak ada status</span>
-                `;
-                }
-            });
-        }
+        // Contoh panggilan updateDataCount() ketika data baru diterima
+        // Misalnya, setelah berhasil memperbarui UI dengan data baru
+        // updateDataCount();
 
         // function updateNoAntrianDisplay(data) {
-        //     // Ambil 5 data unik dari data yang diterima
-        //     const uniqueData = Array.from(new Set(data.map(item => item.no_antrian + item.no_antrian_rm + item.no_poli)))
-        //         .slice(0, 5)
-        //         .map(key => data.find(item => item.no_antrian + item.no_antrian_rm + item.no_poli === key));
-
-        //     // Ambil data terbaru dari data yang sudah difilter
-        //     const latestData = uniqueData[uniqueData.length - 1];
-
-        //     // Dapatkan elemen div
-        //     const riwayat_antrian = document.getElementById('riwayat_antrian');
-        //     const noAntrianDisplay = document.getElementById('no_antrian_display');
-
-        //     if (!latestData) {
-        //         noAntrianDisplay.innerHTML = `
-    //     <span class="text-xl font-medium">Tidak ada data</span>
-    // `;
-        //         return;
-        //     }
-
-        //     if (latestData.status === "poli") {
-        //         noAntrianDisplay.innerHTML = `
-    //     <span id='no_antrian_latest' class="text-9xl font-bold text-yellow-300">${latestData.no_antrian}</span>
-    //     <span id='no_poli_latest' class="text-3xl font-medium">${latestData.no_poli}</span>
-    // `;
-        //     } else if (latestData.status === "rekam medis") {
-        //         noAntrianDisplay.innerHTML = `
-    //     <span id='no_antrian_rm_latest' class="text-9xl font-bold text-yellow-300">${latestData.no_antrian_rm}</span>
-    // `;
-        //     } else {
-        //         noAntrianDisplay.innerHTML = `
-    //     <span class="text-xl font-medium">Tidak ada status</span>
-    // `;
-        //     }
-
-        //     // Loop untuk menampilkan 5 data di riwayat_antrian
-        //     uniqueData.forEach((item, index) => {
+        //     const latestData = data[0];
+        //     const firstFiveData = data.slice(0, 5);
+        //     firstFiveData.forEach((item, index) => {
         //         item.id = index + 1; // Menambahkan properti id ke setiap elemen data
 
-        //         const noAntrianSpan = document.getElementById(`no_antrian_${item.id}`);
-        //         const noAntrianRMSpan = document.getElementById(`no_antrian_rm_${item.id}`);
-        //         const noPoliSpan = document.getElementById(`no_poli_${item.id}`);
+        //         // Dapatkan elemen div
+        //         const riwayat_antrian = document.getElementById('riwayat_antrian');
+        //         const noAntrianDisplay = document.getElementById('no_antrian_display');
 
-        //         if (noAntrianSpan && noAntrianRMSpan && noPoliSpan) {
-        //             noAntrianSpan.textContent = item.no_antrian;
-        //             noAntrianRMSpan.textContent = item.no_antrian_rm;
-        //             noPoliSpan.textContent = item.no_poli;
+        //         if (latestData.status === "poli") {
+        //             const noAntrianSpan = document.getElementById(`no_antrian_${item.id}`);
+        //             const noAntrianRMSpan = document.getElementById(`no_antrian_rm_${item.id}`);
+        //             const noPoliSpan = document.getElementById(`no_poli_${item.id}`);
+
+
+        //             if (noAntrianSpan && noAntrianRMSpan && noPoliSpan) {
+        //                 noAntrianSpan.textContent = item.no_antrian;
+        //                 noAntrianRMSpan.textContent = item.no_antrian_rm;
+        //                 noPoliSpan.textContent = item.no_poli;
+        //             }
+
+        //             noAntrianDisplay.innerHTML = `
+    //         <span id='no_antrian_latest' class="text-9xl font-bold text-yellow-300">${latestData.no_antrian}</span>
+    //         <span id='no_poli_latest' class="text-3xl font-medium">${latestData.no_poli}</span>
+    //         `;
+
+        //         } else if (latestData.status === "rekam medis") {
+        //             const noAntrianSpan = document.getElementById(`no_antrian_${item.id}`);
+        //             const noAntrianRMSpan = document.getElementById(`no_antrian_rm_${item.id}`);
+        //             const noPoliSpan = document.getElementById(`no_poli_${item.id}`);
+
+
+        //             if (noAntrianSpan && noAntrianRMSpan && noPoliSpan) {
+        //                 noAntrianSpan.textContent = item.no_antrian;
+        //                 noAntrianRMSpan.textContent = item.no_antrian_rm;
+        //                 noPoliSpan.textContent = item.no_poli;
+        //             }
+        //             noAntrianDisplay.innerHTML = `
+    //         <span id='no_antrian_rm_latest' class="text-9xl font-bold text-yellow-300">${latestData.no_antrian_rm}</span>
+    //         `;
+        //         } else {
+        //             noAntrianDisplay.innerHTML = `
+    //         <span class="text-xl font-medium">Tidak ada status</span>
+    //         `;
         //         }
         //     });
         // }
+
+        function updateNoAntrianDisplay(data) {
+            // Ambil 5 data unik dari data yang diterima
+            const uniqueData = Array.from(new Set(data.map(item => item.no_antrian + item.no_antrian_rm + item.no_poli)))
+                .slice(0, 5)
+                .map(key => data.find(item => item.no_antrian + item.no_antrian_rm + item.no_poli === key));
+
+            // Ambil data terbaru dari data yang sudah difilter
+            const latestData = uniqueData[0];
+
+            // Dapatkan elemen div
+            const riwayat_antrian = document.getElementById('riwayat_antrian');
+            const noAntrianDisplay = document.getElementById('no_antrian_display');
+
+            if (!latestData) {
+                noAntrianDisplay.innerHTML = `
+        <span class="text-xl font-medium">Tidak ada data</span>
+    `;
+                return;
+            }
+
+            if (latestData.status === "poli") {
+                noAntrianDisplay.innerHTML = `
+        <span id='no_antrian_latest' class="text-9xl font-bold text-yellow-300">${latestData.no_antrian}</span>
+        <span id='no_poli_latest' class="text-3xl font-medium">${latestData.no_poli}</span>
+    `;
+            } else if (latestData.status === "rekam medis") {
+                noAntrianDisplay.innerHTML = `
+        <span id='no_antrian_rm_latest' class="text-9xl font-bold text-yellow-300">${latestData.no_antrian_rm}</span>
+    `;
+            } else {
+                noAntrianDisplay.innerHTML = `
+        <span class="text-xl font-medium">Tidak ada status</span>
+    `;
+            }
+
+            // Loop untuk menampilkan 5 data di riwayat_antrian
+            uniqueData.forEach((item, index) => {
+                item.id = index + 1; // Menambahkan properti id ke setiap elemen data
+
+                const noAntrianSpan = document.getElementById(`no_antrian_${item.id}`);
+                const noAntrianRMSpan = document.getElementById(`no_antrian_rm_${item.id}`);
+                const noPoliSpan = document.getElementById(`no_poli_${item.id}`);
+
+                if (noAntrianSpan && noAntrianRMSpan && noPoliSpan) {
+                    noAntrianSpan.textContent = item.no_antrian;
+                    noAntrianRMSpan.textContent = item.no_antrian_rm;
+                    noPoliSpan.textContent = item.no_poli;
+                }
+            });
+        }
 
         function splitText() {
             if (document.getElementById('no_antrian_latest')) {
@@ -388,46 +405,63 @@
             playSequentially(0);
         }
 
-        // Fungsi untuk membuat observer
-        function createObserver() {
-            const targetNode = document.getElementById('riwayat_antrian');
-
-            // Simpan nilai awal targetNode untuk membandingkan
-            let previousValue = targetNode.textContent.trim();
-
-            // Buat instance MutationObserver
-            const observer = new MutationObserver((mutationsList, observer) => {
-                // Periksa setiap mutasi yang terjadi
-                for (const mutation of mutationsList) {
-                    if (
-                        mutation.type === 'childList' ||
-                        mutation.type === 'characterData' ||
-                        (mutation.type === 'attributes' && mutation.attributeName === 'data-value')
-                    ) {
-                        // Periksa nilai saat ini setelah mutasi
-                        const currentValue = targetNode.textContent.trim();
-
-                        // Panggil fungsi playAudio jika nilai berubah atau mutasi terjadi
-                        if (currentValue !== previousValue) {
-                            playSpeechPoli();
-                            previousValue = currentValue; // Update nilai sebelumnya
-                        }
-                    }
-                }
-            });
-
-            // Konfigurasi observer
-            const config = {
-                attributes: true,
-                childList: true,
-                subtree: true
-            };
-
-            // Mulai mengamati target node untuk perubahan
-            observer.observe(targetNode, config);
+        function detectTimestamp(data) {
+            const latestData = data[0];
+            if (latestData.timestamp !== previousTimestamp) {
+                playSpeechPoli();
+                previousTimestamp = latestData.timestamp; // Perbarui timestamp sebelumnya
+            } else {
+                null;
+            }
         }
 
-        // Panggil fungsi createObserver() untuk memulai pemantauan
-        createObserver();
+        // Periksa timestamp dari data terbaru
+
+        // updateNoAntrianDisplay(latestData);
+        // playSpeechPoli(); // Panggil fungsi yang diinginkan saat ada data baru
+        // previousTimestamp = latestData.timestamp; // Perbarui timestamp sebelumnya
+
+
+        // Fungsi untuk membuat observer
+        // function createObserver() {
+        //     const targetNode = document.getElementById('no_antrian_display');
+
+        //     // Simpan nilai awal targetNode untuk membandingkan
+        //     let previousValue = targetNode.textContent.trim();
+
+        //     // Buat instance MutationObserver
+        //     const observer = new MutationObserver((mutationsList, observer) => {
+        //         // Periksa setiap mutasi yang terjadi
+        //         for (const mutation of mutationsList) {
+        //             if (
+        //                 mutation.type === 'childList' ||
+        //                 mutation.type === 'characterData' ||
+        //                 (mutation.type === 'attributes' && mutation.attributeName === 'data-value')
+        //             ) {
+        //                 // Periksa nilai saat ini setelah mutasi
+        //                 const currentValue = targetNode.textContent.trim();
+
+        //                 // Panggil fungsi playAudio jika nilai berubah atau mutasi terjadi
+        //                 if (currentValue !== previousValue) {
+        //                     playSpeechPoli();
+        //                     previousValue = currentValue; // Update nilai sebelumnya
+        //                 }
+        //             }
+        //         }
+        //     });
+
+        //     // Konfigurasi observer
+        //     const config = {
+        //         attributes: true,
+        //         childList: true,
+        //         subtree: true
+        //     };
+
+        //     // Mulai mengamati target node untuk perubahan
+        //     observer.observe(targetNode, config);
+        // }
+
+        // // Panggil fungsi createObserver() untuk memulai pemantauan
+        // createObserver();
     </script>
 @endsection

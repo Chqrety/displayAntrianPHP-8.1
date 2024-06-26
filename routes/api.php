@@ -22,3 +22,4 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 Route::get('antrian/tv', [DisplayController::class, 'getData'])->name('antrian.tv.get');
 Route::post('antrian/tv', [DisplayController::class, 'data'])->name('antrian.tv.data');
 Route::delete('/antrian/tv', [DisplayController::class, 'deleteData'])->name('antrian.tv.delete');
+

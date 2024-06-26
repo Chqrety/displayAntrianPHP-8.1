@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\AntrianDataUpdate;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
 use GuzzleHttp\Client;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\URL;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class DisplayController extends Controller
 {
@@ -36,7 +38,8 @@ class DisplayController extends Controller
         // Dekode data jika data dalam format JSON
         if (is_string($receivedData)) {
             $decodedData = json_decode($receivedData, true);
-            return response()->json($decodedData);
+        } else {
+            $decodedData = $receivedData;
         }
 
         // Ambil data dari cache
@@ -44,15 +47,21 @@ class DisplayController extends Controller
 
         // Periksa apakah data cache sudah mencapai lima
         if (count($cachedData) >= 10) {
-            // Jika sudah lima, hapus data terakhir
+            // Jika sudah sepuluh, hapus data terakhir
             array_pop($cachedData);
         }
 
+        // Tambahkan timestamp ke data yang diterima
+        $decodedData['timestamp'] = now()->timestamp;
+
         // Tambahkan data baru ke awal array
-        array_unshift($cachedData, $receivedData);
+        array_unshift($cachedData, $decodedData);
 
         // Simpan data yang telah diperbarui ke dalam cache
         Cache::put('antrian_data', $cachedData);
+
+        // Simpan timestamp terbaru untuk deteksi perubahan
+        Cache::put('latest_data_timestamp', $decodedData['timestamp']);
 
         return response()->json(['message' => 'Data received and cached.']);
     }
@@ -69,6 +78,7 @@ class DisplayController extends Controller
 
         return response()->json($cachedData);
     }
+
     public function deleteData()
     {
         // Lakukan logika untuk menghapus data
